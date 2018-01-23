@@ -1,0 +1,7 @@
+*.log
+.changelog
+.DS_Store
+.env
+.vscode
+node_modules
+.changelog

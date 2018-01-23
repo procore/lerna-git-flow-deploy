@@ -1,0 +1,24 @@
+{
+  "name": "lerna-git-flow-deploy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "lerna-deploy": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "find-up": "^2.1.0",
+    "github": "^13.1.0",
+    "lerna-changelog": "^0.7.0",
+    "lerna-changelog-helpers": "^0.4.1",
+    "yargs": "^10.1.1"
+  },
+  "peerDependencies": {
+    "lerna": "^2.8.0"
+  }
+}

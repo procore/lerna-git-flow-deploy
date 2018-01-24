@@ -65,14 +65,18 @@ const getParams = ({ type, lernaPath }) =>
   })
 
 const release = R.pipeP(
+  () => fullChangelog(),
+  changelog => fs.outputFile('CHANGELOG.md', changelog),
   () =>
-    exec([
-      'npx lerna-changelog-helpers --all > CHANGELOG.md',
-      'git add --all',
-      'git commit -m stable',
-      'git push -u origin master',
-      'git push --tags',
-    ]),
+    exec(
+      [
+        'git add --all',
+        'git commit -m stable',
+        'git push -u origin master',
+        'git push --tags',
+      ],
+      { reject: false, stdio: 'inherit' }
+    ),
   ghRelease,
   ghBackfill
 )
@@ -91,7 +95,7 @@ const prerelease = ({ develop, type }) =>
           'git push --tags',
           `git checkout ${develop}`,
         ],
-        { reject: false }
+        { reject: false, stdio: 'inherit' }
       ),
     () => ghPr(type)
   )()

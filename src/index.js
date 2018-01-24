@@ -1,11 +1,5 @@
-const changelog = require('./changelog')
-const publish = require('./publish')
-const ghPr = require('./gh-pr')
-const ghRelease = require('./gh-release')
+const deploy = require('./deploy')
 
 module.exports = {
-  changelog,
-  publish,
-  ghPr,
-  ghRelease,
+  deploy,
 }

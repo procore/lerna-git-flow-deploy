@@ -1,32 +1,20 @@
-const VERSION = require('../package').version
+const findUp = require('find-up')
 
-const { changelog, publish, ghPr, ghRelease } = require('./')
+const { deploy } = require('./')
+
+const VERSION = require('../package').version
 
 const argv = require('yargs')
   .version(VERSION)
   .help('help')
-  .showHelpOnFail(true, 'use --help for available options')
-  .command(
-    'changelog',
-    'output the full changelog',
-    yargs => {},
-    argv => changelog(argv)
-  )
-  .command(
-    'publish [type]',
-    'publish a release',
-    yargs => {},
-    argv => publish(argv)
-  )
-  .command(
-    'gh-pr',
-    'create a github pull request',
-    yargs => {},
-    argv => ghPr(argv)
-  )
-  .command(
-    'gh-release',
-    'create a github tagged release',
-    yargs => {},
-    argv => ghRelease(argv)
-  ).argv
+  .default('type', 'next')
+  .example('$0', 'publish next candidate release ')
+  .example('$0 stable ', 'publish stable release')
+  .showHelpOnFail(true, 'use --help for available options').argv
+
+findUp('lerna.json').then(lernaPath =>
+  deploy({
+    type: argv.type,
+    lernaPath,
+  })
+).catch(console.error)

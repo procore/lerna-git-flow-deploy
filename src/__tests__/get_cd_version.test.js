@@ -1,4 +1,4 @@
-const { getCdVersion } = require('../get_cd_version')
+const getCdVersion = require('../get_cd_version')
 
 const STABLE = '3.1.1'
 const PREPATCH = '3.1.2-rc.1'

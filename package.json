@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "execa-pro": "^1.0.2",
     "find-up": "^2.1.0",
     "fs-extra": "^5.0.0",
     "github": "^13.1.0",

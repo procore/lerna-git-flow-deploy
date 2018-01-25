@@ -1,6 +1,6 @@
 {
   "name": "lerna-git-flow-deploy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "index.js",
   "bin": {
@@ -24,10 +24,10 @@
   "author": "Faris Mustafa <farismmk@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "@octokit/rest": "^14.0.5",
     "execa-pro": "^1.0.2",
     "find-up": "^2.1.0",
     "fs-extra": "^5.0.0",
-    "github": "^13.1.0",
     "lerna-changelog": "^0.7.0",
     "lerna-changelog-helpers": "^0.4.1",
     "semver": "^5.5.0",

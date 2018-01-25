@@ -1,20 +1,20 @@
-const GitHubApi = require('github')
+const octokit = require('@octokit/rest')
 
 const { GITHUB_AUTH } = process.env
 
-const github = new GitHubApi({
+octokit({
   timeout: 5000,
   host: 'api.github.com',
   protocol: 'https',
 })
 
-github.authenticate({
+octokit.authenticate({
   type: 'oauth',
   token: GITHUB_AUTH,
 })
 
 module.exports = {
-  pullRequest: github.pullRequests.create,
-  release: github.repos.createRelease,
-  merge: github.pullRequests.merge
+  pullRequest: octokit.pullRequests.create,
+  release: octokit.repos.createRelease,
+  merge: octokit.pullRequests.merge,
 }

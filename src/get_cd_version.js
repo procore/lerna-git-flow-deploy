@@ -1,7 +1,7 @@
 const semver = require('semver')
 
 const STABLE = 'stable'
-const PREPATCH = 'prepatch'
+const PREMINOR = 'preminor'
 
 const versions = {
   [STABLE]: {
@@ -43,5 +43,5 @@ module.exports = (stable, latest, config, changelog) => {
   const currentCdVersion = semver.diff(stable, latest) || STABLE
   const nextCdVersion = getNextCdVersion(config, changelog)
 
-  return versions[currentCdVersion][nextCdVersion] || PREPATCH
+  return versions[currentCdVersion][nextCdVersion] || PREMINOR
 }

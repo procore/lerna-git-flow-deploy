@@ -1,24 +1,20 @@
 const R = require('ramda')
 const fs = require('fs-extra')
-const findUp = require('find-up')
 const { recentChangelog } = require('lerna-changelog-helpers')
 
 const { release } = require('./gh')
 
-module.exports = R.pipeP(
-  () =>
-    Promise.all([
-      R.pipeP(findUp, fs.readJson)('lerna.json'),
-      recentChangelog(),
-    ]),
-  ([lernaConfig, body]) => {
-    const [owner, repo] = lernaConfig.deploys.repo.split('/')
-    const tag_name = `v${lernaConfig.version}`
+module.exports = ({ lernaPath }) =>
+  R.pipeP(
+    readConfig,
+    lernaConfig =>
+      recentChangelog().then(changelog => [lernaConfig, changelog]),
+    ([lernaConfig, body]) => {
+      const [owner, repo] = lernaConfig.deploys.repo.split('/')
+      const tag_name = `v${lernaConfig.version}`
 
-    return release({ owner, repo, tag_name, body }).then(result => {
-      console.log(`Github release '${tag_name} created`)
-
-      return result
-    })
-  }
-)
+      release({ owner, repo, tag_name, body })
+        .then(() => console.log(`Github release '${tag_name} created`))
+        .catch(() => console.error('Github release tag failed'))
+    }
+  )(lernaPath)

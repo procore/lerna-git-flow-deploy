@@ -1,17 +1,14 @@
 const R = require('ramda')
 const fs = require('fs-extra')
-const findUp = require('find-up')
 const { unreleasedChangelog } = require('lerna-changelog-helpers')
 
 const { pullRequest } = require('./gh')
 
-module.exports = type =>
+module.exports = ({ lernaPath, type }) =>
   R.pipeP(
-    () =>
-      Promise.all([
-        R.pipeP(findUp, fs.readJson)('lerna.json'),
-        unreleasedChangelog(),
-      ]),
+    readConfig,
+    lernaConfig =>
+      unreleasedChangelog().then(changelog => [lernaConfig, changelog]),
     ([lernaConfig, body]) => {
       const [owner, repo] = lernaConfig.deploys.repo.split('/')
 
@@ -22,10 +19,10 @@ module.exports = type =>
         head: type,
         title: `Release v${lernaConfig.version}`,
         body,
-      }).then(result => {
-        console.log(`Github pull request 'v${lernaConfig.version} created`)
-
-        return result
       })
+        .then(() =>
+          console.log(`Github pull request 'v${lernaConfig.version} created`)
+        )
+        .catch('Github pull request failed')
     }
-  )()
+  )(lernaPath)

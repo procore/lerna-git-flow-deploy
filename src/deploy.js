@@ -62,24 +62,25 @@ const getParams = ({ lernaPath, type }) =>
     }))
   })
 
-const release = R.pipeP(
-  () => fullChangelog(),
-  changelog => fs.outputFile('CHANGELOG.md', changelog),
-  () =>
-    exec(
-      [
-        'git add --all',
-        'git commit -m stable',
-        'git push -u origin master',
-        'git push --tags',
-      ],
-      { reject: false, stdio: 'inherit' }
-    ),
-  ghRelease,
-  ghBackfill
-)
+const release = ({ lernaPath }) =>
+  R.pipeP(
+    () => fullChangelog(),
+    changelog => fs.outputFile('CHANGELOG.md', changelog),
+    () =>
+      exec(
+        [
+          'git add --all',
+          'git commit -m stable',
+          'git push -u origin master',
+          'git push --tags',
+        ],
+        { reject: false, stdio: 'inherit' }
+      ),
+    ghRelease({ lernaPath }),
+    ghBackfill({ lernaPath })
+  )()
 
-const prerelease = ({ develop, type }) =>
+const prerelease = ({ lernaPath, type }) =>
   R.pipeP(
     () =>
       exec(
@@ -94,21 +95,21 @@ const prerelease = ({ develop, type }) =>
         ],
         { reject: false, stdio: 'inherit' }
       ),
-    () => ghPr(type)
+    () => ghPr({ lernaPath, type })
   )()
 
 module.exports = ({ type, lernaPath }) =>
   getParams({ lernaPath, type }).then(
     ({ stable, latest, deployConfig, cdVersion }) => {
-      const develop = deployConfig.gitflow.develop
       const config = deployConfig.types[type]
+      const stable = config.publish.stable
 
       return R.pipeP(
         () => setCurrentVersion({ lernaPath, latest }),
         () => parseReleaseParams(Object.assign({}, config, { cdVersion })),
         lernaPublish,
-        () => (config.publish.stable ? release() : null),
-        () => (!config.publish.stable ? prerelease({ develop, type }) : null)
+        () => (stable ? release({ lernaPath }) : null),
+        () => (!stable ? prerelease({ lernaPath, type }) : null)
       )()
     }
   )

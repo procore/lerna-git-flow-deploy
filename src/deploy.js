@@ -102,14 +102,14 @@ module.exports = ({ type, lernaPath }) =>
   getParams({ lernaPath, type }).then(
     ({ stable, latest, deployConfig, cdVersion }) => {
       const config = deployConfig.types[type]
-      const stable = config.publish.stable
+      const isStable = config.publish.stable
 
       return R.pipeP(
         () => setCurrentVersion({ lernaPath, latest }),
         () => parseReleaseParams(Object.assign({}, config, { cdVersion })),
         lernaPublish,
-        () => (stable ? release({ lernaPath }) : null),
-        () => (!stable ? prerelease({ lernaPath, type }) : null)
+        () => (isStable ? release({ lernaPath }) : null),
+        () => (!isStable ? prerelease({ lernaPath, type }) : null)
       )()
     }
   )

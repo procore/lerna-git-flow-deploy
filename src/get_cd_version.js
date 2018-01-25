@@ -1,6 +1,7 @@
 const semver = require('semver')
 
 const STABLE = 'stable'
+const PATCH = 'patch'
 
 const versions = {
   [STABLE]: {
@@ -42,5 +43,5 @@ module.exports = (stable, latest, config, changelog) => {
   const currentCdVersion = semver.diff(stable, latest) || STABLE
   const nextCdVersion = getNextCdVersion(config, changelog)
 
-  return versions[currentCdVersion][nextCdVersion]
+  return versions[currentCdVersion][nextCdVersion] || PATCH
 }

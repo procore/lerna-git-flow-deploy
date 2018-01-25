@@ -1,12 +1,12 @@
-const octokit = require('@octokit/rest')
-
-const { GITHUB_AUTH } = process.env
-
-octokit({
+const octokit = require('@octokit/rest')({
   timeout: 5000,
   host: 'api.github.com',
   protocol: 'https',
-}).authenticate({
+})
+
+const { GITHUB_AUTH } = process.env
+
+octokit.authenticate({
   type: 'oauth',
   token: GITHUB_AUTH,
 })

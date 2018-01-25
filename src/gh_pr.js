@@ -1,28 +1,20 @@
-const R = require('ramda')
-const fs = require('fs-extra')
 const { unreleasedChangelog } = require('lerna-changelog-helpers')
 
 const { pullRequest } = require('./gh')
 
-module.exports = ({ lernaPath, type }) =>
-  R.pipeP(
-    fs.readJson,
-    lernaConfig =>
-      unreleasedChangelog().then(changelog => [lernaConfig, changelog]),
-    ([lernaConfig, body]) => {
-      const [owner, repo] = lernaConfig.deploys.repo.split('/')
+module.exports = async (config, deployType) => {
+  const [owner, repo] = config.deploys.repo.split('/')
+  const body = await unreleasedChangelog()
+  const title = `Prerelease (${deployType}) ${config.version}`
 
-      return pullRequest({
-        owner,
-        repo,
-        base: lernaConfig.deploys.gitflow.master,
-        head: type,
-        title: `Release v${lernaConfig.version}`,
-        body,
-      })
-        .then(() =>
-          console.log(`Github pull request 'v${lernaConfig.version} created`)
-        )
-        .catch('Github pull request failed')
-    }
-  )(lernaPath)
+  await pullRequest({
+    owner,
+    repo,
+    base: config.deploys.gitflow.master,
+    head: deployType,
+    title,
+    body,
+  })
+    .then(() => console.log(`Pull request '${title}' created`))
+    .catch(`Pull request '${title} failed`)
+}

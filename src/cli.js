@@ -1,3 +1,4 @@
+const fs = require('fs-extra')
 const findUp = require('find-up')
 
 const { deploy } = require('./')
@@ -12,9 +13,9 @@ const argv = require('yargs')
   .example('$0 stable ', 'publish stable release')
   .showHelpOnFail(true, 'use --help for available options').argv
 
-findUp('lerna.json').then(lernaPath =>
-  deploy({
-    type: argv.type,
-    lernaPath,
-  })
-).catch(console.error)
+;(async () => {
+  const path = await findUp('lerna.json')
+  const config = await fs.readJson(path)
+
+  deploy(path, config, argv.type)
+})()

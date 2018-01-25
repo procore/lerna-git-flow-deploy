@@ -1,6 +1,5 @@
 const R = require('ramda')
 const fs = require('fs-extra')
-const semver = require('semver')
 const { exec } = require('execa-pro')
 const {
   fullChangelog,
@@ -12,12 +11,7 @@ const ghBackfill = require('./gh_backfill')
 const ghRelease = require('./gh_release')
 const ghPr = require('./gh_pr')
 
-const lernaPublish = options =>
-  exec(`npx lerna publish --yes --force-publish=* ${options}`)
-
-const parseParam = ([flag, value]) => (value ? `${flag}=${value}` : '')
-
-const parseReleaseParams = ({ cdVersion, tag, preid, publish = {} }) =>
+const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
   [
     ['--npm-tag', tag],
     ['--preid', preid],
@@ -25,8 +19,8 @@ const parseReleaseParams = ({ cdVersion, tag, preid, publish = {} }) =>
     ['--skip-git', !publish.git],
     ['--skip-npm', !publish.npm],
   ]
-    .map(parseParam)
-    .filter(R.identity)
+    .filter(([_, value]) => value)
+    .map(([flag, value]) => `${flag}=${value}`)
     .join(' ')
 
 const getBranchVersion = branch =>
@@ -34,82 +28,61 @@ const getBranchVersion = branch =>
     .then(([{ stdout }]) => JSON.parse(stdout).version)
     .catch(() => '')
 
-const setCurrentVersion = ({ lernaPath, latest }) =>
-  fs
-    .readJson(lernaPath)
-    .then(R.set(R.lensProp('version'), latest))
-    .then(updated => fs.writeJson(lernaPath, updated, { spaces: 2 }))
+const setVersion = (path, config, version) =>
+  fs.writeJson(path, Object.assign({}, config, { version }), { spaces: 2 })
 
-const getParams = ({ lernaPath, type }) =>
-  fs.readJson(lernaPath).then(lernaConfig => {
-    const deployConfig = lernaConfig.deploys
-    const semverConfig = deployConfig.semver
+const lernaPublish = flags =>
+  exec(`lerna publish --yes --force-publish=* ${flags}`)
 
-    return Promise.all([
-      getBranchVersion(deployConfig.gitflow.master),
-      getBranchVersion(type),
-      unreleasedChangelog(),
-    ]).then(([stable, latest, changelog]) => ({
-      stable,
-      latest: latest || stable,
-      deployConfig,
-      cdVersion: getCdVersion(
-        stable,
-        latest || stable,
-        semverConfig,
-        changelog
-      ),
-    }))
-  })
-
-const release = ({ lernaPath }) =>
-  R.pipeP(
-    () => fullChangelog(),
-    changelog => fs.outputFile('CHANGELOG.md', changelog),
-    () =>
-      exec(
-        [
-          'git add --all',
-          'git commit -m stable',
-          'git push -u origin master',
-          'git push --tags',
-        ],
-        { reject: false, stdio: 'inherit' }
-      ),
-    ghRelease({ lernaPath }),
-    ghBackfill({ lernaPath })
-  )()
-
-const prerelease = ({ lernaPath, type }) =>
-  R.pipeP(
-    () =>
-      exec(
-        [
-          `git push -d origin ${type}`,
-          `git branch -D ${type}`,
-          `git checkout -b ${type}`,
-          `git add --all`,
-          `git commit -m prerelease`,
-          `git push -u origin ${type}`,
-          'git push --tags',
-        ],
-        { reject: false, stdio: 'inherit' }
-      ),
-    () => ghPr({ lernaPath, type })
-  )()
-
-module.exports = ({ type, lernaPath }) =>
-  getParams({ lernaPath, type }).then(
-    ({ stable, latest, deployConfig, cdVersion }) => {
-      const config = deployConfig.types[type]
-      const isStable = config.publish.stable
-
-      return R.pipeP(
-        () => setCurrentVersion({ lernaPath, latest }),
-        () => parseReleaseParams(Object.assign({}, config, { cdVersion })),
-        lernaPublish,
-        () => (isStable ? release({ lernaPath }) : null),
-        () => (!isStable ? prerelease({ lernaPath, type }) : null)
-      )()
-    }
+const release = async config => {
+  const changelog = await fullChangelog()
+  await fs.outputFile('CHANGELOG.md', changelog)
+  await exec(
+    [
+      'git add --all',
+      'git commit -m stable',
+      'git push -u origin master',
+      'git push --tags',
+    ],
+    { reject: false, stdio: 'inherit' }
   )
+  ghRelease(config)
+  ghBackfill(config)
+}
+
+const prerelease = async (config, deployType) => {
+  await exec(
+    [
+      `git push -d origin ${deployType}`,
+      `git branch -D ${deployType}`,
+      `git checkout -b ${deployType}`,
+      `git add --all`,
+      `git commit -m prerelease`,
+      `git push -u origin ${deployType}`,
+      'git push --tags',
+    ],
+    { reject: false, stdio: 'inherit' }
+  )
+  ghPr(config, deployType)
+}
+
+module.exports = async (lernaPath, lernaConfig, deployType) => {
+  try {
+    const { gitflow, semver, types } = lernaConfig.deploys
+    const deploy = types[deployType]
+    const changelog = await unreleasedChangelog()
+    const stable = await getBranchVersion(gitflow.master)
+    const latest = await getBranchVersion(deployType)
+    const version = latest || stable
+    const cdVersion = getCdVersion(stable, version, semver, changelog)
+    const flags = buildPublishFlags(deploy, cdVersion)
+    await setVersion(lernaPath, lernaConfig, version)
+    await lernaPublish(flags)
+    const config = await fs.readJson(lernaPath)
+    deploy.publish.stable
+      ? release(config, deployType)
+      : prerelease(config, deployType)
+  } catch (e) {
+    console.error(e)
+  }
+}

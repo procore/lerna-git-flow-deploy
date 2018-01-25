@@ -6,7 +6,7 @@ const { release } = require('./gh')
 
 module.exports = ({ lernaPath }) =>
   R.pipeP(
-    readConfig,
+    fs.readJson,
     lernaConfig =>
       recentChangelog().then(changelog => [lernaConfig, changelog]),
     ([lernaConfig, body]) => {

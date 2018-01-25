@@ -6,7 +6,7 @@ const { pullRequest } = require('./gh')
 
 module.exports = ({ lernaPath, type }) =>
   R.pipeP(
-    readConfig,
+    fs.readJson,
     lernaConfig =>
       unreleasedChangelog().then(changelog => [lernaConfig, changelog]),
     ([lernaConfig, body]) => {

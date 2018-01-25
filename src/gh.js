@@ -6,9 +6,7 @@ octokit({
   timeout: 5000,
   host: 'api.github.com',
   protocol: 'https',
-})
-
-octokit.authenticate({
+}).authenticate({
   type: 'oauth',
   token: GITHUB_AUTH,
 })

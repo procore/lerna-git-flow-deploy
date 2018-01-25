@@ -11,6 +11,12 @@ const ghBackfill = require('./gh_backfill')
 const ghRelease = require('./gh_release')
 const ghPr = require('./gh_pr')
 
+const fetchRemote = () =>
+  exec('git fetch', {
+    reject: false,
+    stdio: 'inherit',
+  })
+
 const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
   [
     ['--npm-tag', tag],
@@ -44,7 +50,10 @@ const release = async config => {
       'git push -u origin master',
       'git push --tags',
     ],
-    { reject: false, stdio: 'inherit' }
+    {
+      reject: false,
+      stdio: 'inherit',
+    }
   )
   ghRelease(config)
   ghBackfill(config)
@@ -61,15 +70,20 @@ const prerelease = async (config, deployType) => {
       `git push -u origin ${deployType}`,
       'git push --tags',
     ],
-    { reject: false, stdio: 'inherit' }
+    {
+      reject: false,
+      stdio: 'inherit',
+    }
   )
   ghPr(config, deployType)
 }
 
 module.exports = async (lernaPath, lernaConfig, deployType) => {
+  const { gitflow, semver, types } = lernaConfig.deploys
+  const deploy = types[deployType]
+
   try {
-    const { gitflow, semver, types } = lernaConfig.deploys
-    const deploy = types[deployType]
+    await fetchRemote()
     const changelog = await unreleasedChangelog()
     const stable = await getBranchVersion(gitflow.master)
     const latest = await getBranchVersion(deployType)

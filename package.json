@@ -9,7 +9,19 @@
   "scripts": {
     "test": "jest"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/farism/lerna-git-flow-deploy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/farism/lerna-git-flow-deploy/issues"
+  },
+  "keywords": [
+    "lerna",
+    "publish",
+    "deploy"
+  ],
+  "author": "Faris Mustafa <farismmk@gmail.com>",
   "license": "ISC",
   "dependencies": {
     "execa-pro": "^1.0.2",

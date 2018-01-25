@@ -85,7 +85,7 @@ const prerelease = ({ develop, type }) =>
       exec(
         [
           `git push -d origin ${type}`,
-          `git branch -d ${type}`,
+          `git branch -D ${type}`,
           `git checkout -b ${type}`,
           `git add --all`,
           `git commit -m prerelease`,

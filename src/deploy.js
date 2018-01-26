@@ -41,7 +41,10 @@ const setVersion = (path, config, version) =>
   fs.writeJson(path, Object.assign({}, config, { version }), { spaces: 2 })
 
 const lernaPublish = flags =>
-  exec(`lerna publish --yes --force-publish=* ${flags}`)
+  exec(`lerna publish --yes --force-publish=* ${flags}`, {
+    reject: false,
+    stdio: 'inherit',
+  })
 
 const release = async config => {
   const changelog = await fullChangelog()
@@ -78,7 +81,7 @@ const prerelease = async (config, deployType) => {
       stdio: 'inherit',
     }
   )
-  ghPr(config, deployType)
+  await ghPr(config, deployType)
 }
 
 module.exports = async (lernaPath, lernaConfig, deployType) => {

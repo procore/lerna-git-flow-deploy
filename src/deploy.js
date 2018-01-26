@@ -11,12 +11,6 @@ const ghBackfill = require('./gh_backfill')
 const ghRelease = require('./gh_release')
 const ghPr = require('./gh_pr')
 
-const fetchRemote = () =>
-  exec('git fetch', {
-    reject: false,
-    stdio: 'inherit',
-  })
-
 const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
   [
     ['--npm-tag', tag],
@@ -30,8 +24,17 @@ const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
     .join(' ')
 
 const getBranchVersion = branch =>
-  exec(`git show ${branch}:lerna.json`, { reject: false })
-    .then(([{ stdout }]) => JSON.parse(stdout).version)
+  exec(
+    [
+      `git fetch origin ${branch}`,
+      `git branch --track ${branch} origin/${branch}`,
+      `git show ${branch}:lerna.json`,
+    ],
+    {
+      reject: false,
+    }
+  )
+    .then(result => JSON.parse(R.last(result).stdout).version)
     .catch(() => '')
 
 const setVersion = (path, config, version) =>
@@ -83,7 +86,6 @@ module.exports = async (lernaPath, lernaConfig, deployType) => {
   const deploy = types[deployType]
 
   try {
-    await fetchRemote()
     const changelog = await unreleasedChangelog()
     const stable = await getBranchVersion(gitflow.master)
     const latest = await getBranchVersion(deployType)

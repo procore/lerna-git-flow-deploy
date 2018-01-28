@@ -25,6 +25,7 @@ const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
     .map(([flag, value]) => `${flag}=${value}`)
 
 const getBranchVersion = async branch => {
+  await execa('git', ['remote', 'prune', 'origin'], opts)
   await execa('git', ['fetch', 'origin', branch], opts)
   await execa('git', ['branch', '--track', branch, `origin/${branch}`], opts)
   const { stdout } = await execa('git', ['show', `${branch}:lerna.json`], {
@@ -59,8 +60,8 @@ const prerelease = async (config, deployType) => {
   await execa('git', ['push', '-d', 'origin', deployType], opts)
   await execa('git', ['branch', '-D', deployType], opts)
   await execa('git', ['checkout', '-b', deployType], opts)
-  await execa('git', ['add', '--all', ''], opts)
-  await execa('git', ['commit', '-m', '"prerelease"'], opts)
+  await execa('git', ['add', '--all'], opts)
+  await execa('git', ['commit', '-m', 'prerelease'], opts)
   await execa('git', ['push', '-u', 'origin', deployType], opts)
   await execa('git', ['push', '--tags', ''], opts)
   await ghPr(config, deployType)

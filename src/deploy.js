@@ -1,6 +1,7 @@
 const R = require('ramda')
 const fs = require('fs-extra')
 const execa = require('execa')
+const semver = require('semver')
 const {
   fullChangelog,
   unreleasedChangelog,
@@ -39,6 +40,8 @@ const getBranchVersion = async branch => {
   }
 }
 
+const maxVersion = (v1, v2) => (semver.gt(v1, v2) ? v1 : v2)
+
 const setVersion = (path, config, version) =>
   fs.writeJson(path, Object.assign({}, config, { version }), { spaces: 2 })
 
@@ -75,7 +78,7 @@ module.exports = async (lernaPath, lernaConfig, deployType) => {
     const changelog = await unreleasedChangelog()
     const stable = await getBranchVersion(gitflow.master)
     const latest = await getBranchVersion(deployType)
-    const version = latest || stable
+    const version = maxVersion(stable, latest || stable)
     const cdVersion = getCdVersion(stable, version, semver, changelog)
     const flags = buildPublishFlags(deploy, cdVersion)
     await setVersion(lernaPath, lernaConfig, version)

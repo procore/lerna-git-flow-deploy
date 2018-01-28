@@ -1,6 +1,6 @@
 const R = require('ramda')
 const fs = require('fs-extra')
-const { exec } = require('execa-pro')
+const execa = require('execa')
 const {
   fullChangelog,
   unreleasedChangelog,
@@ -10,6 +10,8 @@ const getCdVersion = require('./get_cd_version')
 const ghBackfill = require('./gh_backfill')
 const ghRelease = require('./gh_release')
 const ghPr = require('./gh_pr')
+
+const opts = { reject: false, stdio: 'inherit' }
 
 const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
   [
@@ -21,66 +23,46 @@ const buildPublishFlags = ({ tag, preid, publish = {} }, cdVersion) =>
   ]
     .filter(([_, value]) => value)
     .map(([flag, value]) => `${flag}=${value}`)
-    .join(' ')
 
-const getBranchVersion = branch =>
-  exec(
-    [
-      `git fetch origin ${branch}`,
-      `git branch --track ${branch} origin/${branch}`,
-      `git show ${branch}:lerna.json`,
-    ],
-    {
-      reject: false,
-    }
-  )
-    .then(result => JSON.parse(R.last(result).stdout).version)
-    .catch(() => '')
+const getBranchVersion = async branch => {
+  await execa('git', ['fetch', 'origin', branch], opts)
+  await execa('git', ['branch', '--track', branch, `origin/${branch}`], opts)
+  const { stdout } = await execa('git', ['show', `${branch}:lerna.json`], {
+    reject: false,
+  })
+
+  try {
+    return JSON.parse(stdout).version
+  } catch (e) {
+    return ''
+  }
+}
 
 const setVersion = (path, config, version) =>
   fs.writeJson(path, Object.assign({}, config, { version }), { spaces: 2 })
 
 const lernaPublish = flags =>
-  exec(`lerna publish --yes --force-publish=* ${flags}`, {
-    reject: false,
-    stdio: 'inherit',
-  })
+  execa('lerna', ['publish', '--yes', '--force-publish=*'].concat(flags), opts)
 
 const release = async config => {
   const changelog = await fullChangelog()
   await fs.outputFile('CHANGELOG.md', changelog)
-  await exec(
-    [
-      'git add --all',
-      'git commit -m stable',
-      'git push -u origin master',
-      'git push --tags',
-    ],
-    {
-      reject: false,
-      stdio: 'inherit',
-    }
-  )
-  ghRelease(config)
-  ghBackfill(config)
+  await execa('git', ['add', '--all', ''], opts)
+  await execa('git', ['commit', '-m', '"[ci skip] stable"'], opts)
+  await execa('git', ['push', '-u', 'origin', 'master'], opts)
+  await execa('git', ['push', '--tags', ''], opts)
+  await ghRelease(config)
+  await ghBackfill(config)
 }
 
 const prerelease = async (config, deployType) => {
-  await exec(
-    [
-      `git push -d origin ${deployType}`,
-      `git branch -D ${deployType}`,
-      `git checkout -b ${deployType}`,
-      `git add --all`,
-      `git commit -m prerelease`,
-      `git push -u origin ${deployType}`,
-      'git push --tags',
-    ],
-    {
-      reject: false,
-      stdio: 'inherit',
-    }
-  )
+  await execa('git', ['push', '-d', 'origin', deployType], opts)
+  await execa('git', ['branch', '-D', deployType], opts)
+  await execa('git', ['checkout', '-b', deployType], opts)
+  await execa('git', ['add', '--all', ''], opts)
+  await execa('git', ['commit', '-m', '"prerelease"'], opts)
+  await execa('git', ['push', '-u', 'origin', deployType], opts)
+  await execa('git', ['push', '--tags', ''], opts)
   await ghPr(config, deployType)
 }
 

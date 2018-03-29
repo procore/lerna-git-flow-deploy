@@ -25,7 +25,8 @@ module.exports = async config => {
       owner,
       repo,
       number: result.data.number,
-      commit_message: title,
+      commit_title: `[ci skip] ${title}`,
+      commit_message: 'Backfill version from stable',
     })
       .then(() => console.log('Backfill merged'))
       .catch(() => console.error('Backfill merge failed')))

@@ -1,9 +1,4 @@
-const { pullRequest, merge } = require('./gh')
-const promiseRetry = require('promise-retry')
-const log = (label, target) => {
-  console.log(label);
-  return target
-}
+const { attempt, pullRequest, merge } = require('./gh')
 
 module.exports = async config => {
   const [owner, repo] = config.deploys.repo.split('/')
@@ -33,13 +28,8 @@ module.exports = async config => {
     commit_message: 'Backfill version from stable',
   }
 
-  const backfill = promiseRetry(
-    (retry, attempt) => merge(config).catch(retry),
-    { retries: 3 }
-  )
-
   pr &&
-    (await backfill)
+    (await attempt(() => merge(mergeConfig)))
       .then(() => console.log('Backfill merged'))
       .catch(err => console.error(`Backfill merge failed: ${err}`))
     )

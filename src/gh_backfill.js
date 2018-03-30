@@ -1,4 +1,9 @@
 const { pullRequest, merge } = require('./gh')
+const promiseRetry = require('promise-retry')
+const log = (label, target) => {
+  console.log(label);
+  return target
+}
 
 module.exports = async config => {
   const [owner, repo] = config.deploys.repo.split('/')
@@ -6,7 +11,7 @@ module.exports = async config => {
   const head = config.deploys.gitflow.master
   const title = `Backfill ${head} -> ${base}`
 
-  const result = await pullRequest({
+  const pr = await pullRequest({
     owner,
     repo,
     base,
@@ -18,16 +23,24 @@ module.exports = async config => {
       console.log('Backfill pull request created')
       return res
     })
-    .catch(() => console.error('Backfill pull request failed'))
+    .catch(err => console.error(`Backfill pull request failed: ${err}`))
 
-  result &&
-    (await merge({
-      owner,
-      repo,
-      number: result.data.number,
-      commit_title: `[ci skip] ${title}`,
-      commit_message: 'Backfill version from stable',
-    })
+  const mergeConfig = {
+    owner,
+    repo,
+    number: pr.data.number,
+    commit_title: `[ci skip] ${title}`,
+    commit_message: 'Backfill version from stable',
+  }
+
+  const backfill = promiseRetry(
+    (retry, attempt) => merge(config).catch(retry),
+    { retries: 3 }
+  )
+
+  pr &&
+    (await backfill)
       .then(() => console.log('Backfill merged'))
-      .catch(() => console.error('Backfill merge failed')))
+      .catch(err => console.error(`Backfill merge failed: ${err}`))
+    )
 }

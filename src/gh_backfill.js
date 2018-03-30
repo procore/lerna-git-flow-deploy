@@ -1,4 +1,5 @@
-const { attempt, pullRequest, merge } = require('./gh')
+const { pullRequest, merge } = require('./gh')
+const attempt = require('./attempt')
 
 module.exports = async config => {
   const [owner, repo] = config.deploys.repo.split('/')

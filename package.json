@@ -1,6 +1,6 @@
 {
   "name": "lerna-git-flow-deploy",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "",
   "main": "index.js",
   "bin": {
@@ -40,3 +40,4 @@
     "jest": "24.8.0"
   }
 }
+

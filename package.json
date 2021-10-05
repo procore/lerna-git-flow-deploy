@@ -7,7 +7,9 @@
     "lerna-deploy": "./bin/cli.js"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepare": "yarn run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -31,13 +33,15 @@
     "lerna-changelog": "^0.7.0",
     "lerna-changelog-helpers": "0.4.2",
     "semver": "^5.5.0",
-    "yargs": "^10.1.1"
+    "yargs": "^15.0.1",
+    "@snyk/protect": "latest"
   },
   "peerDependencies": {
     "lerna": "^2.8.0"
   },
   "devDependencies": {
-    "jest": "24.8.0"
-  }
+    "jest": "25.0.0"
+  },
+  "snyk": true
 }
 

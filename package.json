@@ -30,7 +30,7 @@
     "fs-extra": "^5.0.0",
     "lerna-changelog": "^0.7.0",
     "lerna-changelog-helpers": "0.4.2",
-    "semver": "^5.5.0",
+    "semver": "^7.5.2",
     "yargs": "^10.1.1"
   },
   "peerDependencies": {
